@@ -31,7 +31,6 @@ app.mount("/uploaded_pdfs", StaticFiles(directory="uploaded_pdfs"), name="upload
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Make sure NLTK punkt tokenizer is downloaded
 nltk.download('punkt')
 
 @app.get("/", response_class=HTMLResponse)
@@ -60,7 +59,6 @@ async def analyze_pdfs(
             full_text += text + "\n"
             page_texts.append(text)
 
-        # Use nltk to split into sentences
         sentences = sent_tokenize(full_text)
         sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
         similarities = util.cos_sim(idea_embedding, sentence_embeddings)[0]
@@ -68,7 +66,6 @@ async def analyze_pdfs(
         top_sentences = [sentences[i].strip() for i in top_indices]
         score = float(similarities.mean().item())
 
-        # Find sentence positions in text for frontend highlighting
         highlight_positions = []
         for sentence in top_sentences:
             for match in re.finditer(re.escape(sentence), full_text):
