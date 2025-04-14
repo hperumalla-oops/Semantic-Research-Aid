@@ -14,10 +14,10 @@ This project is a web-based research assistant that allows users to upload PDFs 
 ---
 
 ## how to run
-`git clone https://github.com/hperumalla-oops/Semantic-Research-Aid.git
-cd Semantic-Research-Aid
-pip install -r requirements.txt
-uvicorn app:app --reload`
+`git clone https://github.com/hperumalla-oops/Semantic-Research-Aid.git`
+`cd Semantic-Research-Aid`
+`pip install -r requirements.txt`
+`uvicorn app:app --reload`
 
 
 
