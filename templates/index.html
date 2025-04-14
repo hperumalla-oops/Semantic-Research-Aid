@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Research Paper Relevance Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f9f9f9;
+    }
+    .container {
+      width: 80%;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .input-section {
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      font-size: 1rem;
+      padding: 10px;
+    }
+    .upload-section {
+      margin-bottom: 20px;
+    }
+    .pdf-display-container {
+      display: flex;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .left-panel {
+      width: 30%;
+      background-color: #fff;
+      border-right: 1px solid #ccc;
+      padding: 15px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .right-panel {
+      width: 70%;
+      background-color: #fff;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+    .pdf-frame {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .nav-buttons {
+      margin: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="input-section">
+      <label for="idea"><strong>Enter idea / key concept:</strong></label>
+      <textarea id="idea" placeholder="e.g., NLP for legal contract analysis..."></textarea>
+    </div>
+
+    <div class="upload-section">
+      <input type="file" id="pdfUpload" accept="application/pdf" multiple />
+    </div>
+
+    <div>
+      <button onclick="executeAnalysis()">Execute</button>
+    </div>
+
+    <div id="pdfContainer" class="pdf-display-container" style="display:none;">
+      <div class="left-panel" id="ideaHighlights">
+        <!-- Key ideas will appear here -->
+      </div>
+      <div class="right-panel">
+        <iframe id="pdfViewer" class="pdf-frame"></iframe>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button onclick="prevPDF()">Previous</button>
+      <button onclick="nextPDF()">Next</button>
+    </div>
+  </div>
+
+  <script>
+    let uploadedFiles = [];
+    let currentIndex = 0;
+    let analysisResults = [];
+
+    async function executeAnalysis() {
+      const idea = document.getElementById("idea").value;
+      const input = document.getElementById("pdfUpload");
+      uploadedFiles = Array.from(input.files);
+
+      if (!idea || uploadedFiles.length === 0) {
+        alert("Please enter an idea and upload at least one PDF.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("idea", idea);
+      uploadedFiles.forEach(file => formData.append("files", file));
+
+      try {
+        const response = await fetch("/analyze/", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        analysisResults = data.results;
+        currentIndex = 0;
+        showPDF(currentIndex);
+      } catch (err) {
+        console.error("Error during analysis:", err);
+        alert("An error occurred during analysis.");
+      }
+    }
+
+    function showPDF(index) {
+      const file = uploadedFiles[index];
+      const result = analysisResults.find(r => r.file === file.name);
+
+      // Backend PDF path if available, fallback to client blob
+      const viewer = document.getElementById("pdfViewer");
+      viewer.src = result?.path || URL.createObjectURL(file);
+
+      document.getElementById("pdfContainer").style.display = "flex";
+
+      const ideasBox = document.getElementById("ideaHighlights");
+      ideasBox.innerHTML = `<h3>Relevant Sentences in <em>${file.name}</em></h3>`;
+
+      if (result && result.highlights.length > 0) {
+        const list = document.createElement("ul");
+        result.highlights.forEach(h => {
+          const li = document.createElement("li");
+          li.innerText = h.sentence;
+          list.appendChild(li);
+        });
+        ideasBox.appendChild(list);
+      } else {
+        ideasBox.innerHTML += "<p>No relevant ideas found.</p>";
+      }
+    }
+
+    function prevPDF() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        showPDF(currentIndex);
+      }
+    }
+
+    function nextPDF() {
+      if (currentIndex < uploadedFiles.length - 1) {
+        currentIndex++;
+        showPDF(currentIndex);
+      }
+    }
+  </script>
+</body>
+</html>
